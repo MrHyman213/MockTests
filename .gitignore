@@ -3,6 +3,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Allure ###
+.allure/
+allure-results/
+
 ### IntelliJ IDEA ###
 .idea
 *.iws

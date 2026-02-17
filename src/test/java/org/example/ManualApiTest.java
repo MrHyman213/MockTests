@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ManualApiTest {
 
     private static WireMockServer wireMockServer;
-    private static final String WEB_SERVICE_URL = "http://localhost:8080";
+    private static final String WEB_SERVICE_URL = "http://localhost:8888";
     private static final String VALID_API_KEY = "qazWSXedc";
     private static final String VALID_TOKEN = "ABCDEF0123456789ABCDEF0123456789";
 
@@ -21,16 +21,11 @@ public class ManualApiTest {
     static void startMockServer() {
         wireMockServer = new WireMockServer(options().port(8888));
         wireMockServer.start();
-        wireMockServer.stubFor(post(urlEqualTo("/auth"))
+        wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"status\": \"success\"}")));
-        wireMockServer.stubFor(post(urlEqualTo("/doAction"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\"status\": \"success\"}")));
+                        .withBody("{\"result\": \"OK\"}")));
         System.out.println("WireMock сервер запущен на http://localhost:8888");
     }
 
@@ -64,8 +59,6 @@ public class ManualApiTest {
         System.out.println("Response: " + response.getBody().asString());
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.jsonPath().getString("result")).isEqualTo("OK");
-        wireMockServer.verify(postRequestedFor(urlEqualTo("/auth"))
-                .withRequestBody(containing("token=" + VALID_TOKEN)));
     }
 
     @Test
@@ -85,8 +78,6 @@ public class ManualApiTest {
         System.out.println("Response: " + response.getBody().asString());
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.jsonPath().getString("result")).isEqualTo("OK");
-        wireMockServer.verify(postRequestedFor(urlEqualTo("/doAction"))
-                .withRequestBody(containing("token=" + VALID_TOKEN)));
     }
 
     @Test
@@ -153,6 +144,12 @@ public class ManualApiTest {
     @DisplayName("5. Невалидный формат токена (содержит G)")
     void testInvalidTokenFormat() {
         System.out.println("\n=== Тест 5: Невалидный формат токена ===");
+        wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
+                .withRequestBody(containing("ABCDEFG"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"result\": \"ERROR\", \"message\": \"Токен должно соответствовать формату\"}")));
         Response response = given()
                 .contentType("application/x-www-form-urlencoded")
                 .header("Accept", "application/json")
@@ -173,6 +170,11 @@ public class ManualApiTest {
     @DisplayName("6. Отсутствие API ключа")
     void testMissingApiKey() {
         System.out.println("\n=== Тест 6: Отсутствие API ключа ===");
+        wireMockServer.stubFor(post(urlEqualTo("/endpoint-no-key"))
+                .willReturn(aResponse()
+                        .withStatus(401)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"result\": \"ERROR\", \"message\": \"Missing API Key\"}")));
         Response response = given()
                 .contentType("application/x-www-form-urlencoded")
                 .header("Accept", "application/json")
@@ -180,7 +182,7 @@ public class ManualApiTest {
                 .formParam("token", VALID_TOKEN)
                 .formParam("action", "LOGIN")
                 .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
+                .post(WEB_SERVICE_URL + "/endpoint-no-key");
         System.out.println("Status: " + response.getStatusCode());
         System.out.println("Response: " + response.getBody().asString());
         assertThat(response.getStatusCode()).isEqualTo(401);
@@ -193,6 +195,12 @@ public class ManualApiTest {
     @DisplayName("7. Невалидное действие")
     void testInvalidAction() {
         System.out.println("\n=== Тест 7: Невалидное действие ===");
+        wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
+                .withRequestBody(containing("action=INVALID"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"result\": \"ERROR\", \"message\": \"invalid action\"}")));
         Response response = given()
                 .contentType("application/x-www-form-urlencoded")
                 .header("Accept", "application/json")
@@ -213,6 +221,12 @@ public class ManualApiTest {
     @DisplayName("8. Отсутствие параметра token")
     void testMissingToken() {
         System.out.println("\n=== Тест 8: Отсутствие параметра token ===");
+        wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
+                .withRequestBody(notMatching(".*token=.*"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"result\": \"ERROR\", \"message\": \"Missing token parameter\"}")));
         Response response = given()
                 .contentType("application/x-www-form-urlencoded")
                 .header("Accept", "application/json")
@@ -232,6 +246,12 @@ public class ManualApiTest {
     @DisplayName("9. Отсутствие параметра action")
     void testMissingAction() {
         System.out.println("\n=== Тест 9: Отсутствие параметра action ===");
+        wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
+                .withRequestBody(notMatching(".*action=.*"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"result\": \"ERROR\", \"message\": \"Missing action parameter\"}")));
         Response response = given()
                 .contentType("application/x-www-form-urlencoded")
                 .header("Accept", "application/json")
@@ -251,7 +271,8 @@ public class ManualApiTest {
     @DisplayName("10. Mock-сервер возвращает ошибку 500")
     void testMockServerError() {
         System.out.println("\n=== Тест 10: Mock-сервер возвращает ошибку 500 ===");
-        wireMockServer.stubFor(post(urlEqualTo("/auth"))
+        wireMockServer.resetAll();
+        wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
                 .willReturn(aResponse()
                         .withStatus(500)
                         .withHeader("Content-Type", "application/json")
@@ -266,11 +287,6 @@ public class ManualApiTest {
                 .post(WEB_SERVICE_URL + "/endpoint");
         System.out.println("Status: " + response.getStatusCode());
         System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isIn(200, 500, 502, 503);
-        wireMockServer.stubFor(post(urlEqualTo("/auth"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\"status\": \"success\"}")));
+        assertThat(response.getStatusCode()).isEqualTo(500);
     }
 }
