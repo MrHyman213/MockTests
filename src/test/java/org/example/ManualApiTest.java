@@ -1,6 +1,8 @@
 package org.example;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import io.qameta.allure.*;
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
 
@@ -9,6 +11,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Epic("API Testing")
+@Feature("Endpoint Testing")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ManualApiTest {
 
@@ -45,248 +49,362 @@ public class ManualApiTest {
     @Test
     @Order(1)
     @DisplayName("1. Успешный LOGIN запрос")
+    @Description("Проверка успешной аутентификации пользователя через LOGIN действие")
+    @Story("Позитивные сценарии")
+    @Severity(SeverityLevel.BLOCKER)
     void testSuccessfulLogin() {
-        System.out.println("\n=== Тест 1: Успешный LOGIN запрос ===");
-        Response response = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", VALID_TOKEN)
-                .formParam("action", "LOGIN")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isEqualTo(200);
-        assertThat(response.jsonPath().getString("result")).isEqualTo("OK");
+        String token = VALID_TOKEN;
+        String action = "LOGIN";
+        
+        Allure.parameter("Token", token);
+        Allure.parameter("Action", action);
+        Allure.parameter("API Key", VALID_API_KEY);
+        
+        Response response = sendRequest(token, action);
+        
+        verifySuccessResponse(response);
     }
 
     @Test
     @Order(2)
     @DisplayName("2. Успешный ACTION запрос")
+    @Description("Проверка успешного выполнения ACTION для аутентифицированного пользователя")
+    @Story("Позитивные сценарии")
+    @Severity(SeverityLevel.CRITICAL)
     void testSuccessfulAction() {
-        System.out.println("\n=== Тест 2: Успешный ACTION запрос ===");
-        Response response = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", VALID_TOKEN)
-                .formParam("action", "ACTION")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isEqualTo(200);
-        assertThat(response.jsonPath().getString("result")).isEqualTo("OK");
+        String token = VALID_TOKEN;
+        String action = "ACTION";
+        
+        Allure.parameter("Token", token);
+        Allure.parameter("Action", action);
+        Allure.parameter("API Key", VALID_API_KEY);
+        
+        Response response = sendRequest(token, action);
+        
+        verifySuccessResponse(response);
     }
 
     @Test
     @Order(3)
     @DisplayName("3. Успешный LOGOUT запрос")
+    @Description("Проверка успешного завершения сессии пользователя через LOGOUT")
+    @Story("Позитивные сценарии")
+    @Severity(SeverityLevel.CRITICAL)
     void testSuccessfulLogout() {
-        System.out.println("\n=== Тест 3: Успешный LOGOUT запрос ===");
-        Response response = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", VALID_TOKEN)
-                .formParam("action", "LOGOUT")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isEqualTo(200);
-        assertThat(response.jsonPath().getString("result")).isEqualTo("OK");
+        String token = VALID_TOKEN;
+        String action = "LOGOUT";
+        
+        Allure.parameter("Token", token);
+        Allure.parameter("Action", action);
+        Allure.parameter("API Key", VALID_API_KEY);
+        
+        Response response = sendRequest(token, action);
+        
+        verifySuccessResponse(response);
     }
 
     @Test
     @Order(4)
     @DisplayName("4. Полный workflow: LOGIN → ACTION → LOGOUT")
+    @Description("Проверка полного жизненного цикла пользовательской сессии")
+    @Story("Позитивные сценарии")
+    @Severity(SeverityLevel.BLOCKER)
     void testFullWorkflow() {
-        System.out.println("\n=== Тест 4: Полный workflow ===");
-        System.out.println("Шаг 1: LOGIN");
-        Response loginResponse = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", VALID_TOKEN)
-                .formParam("action", "LOGIN")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("  Status: " + loginResponse.getStatusCode() + ", Response: " + loginResponse.getBody().asString());
-        assertThat(loginResponse.getStatusCode()).isEqualTo(200);
-        System.out.println("Шаг 2: ACTION");
-        Response actionResponse = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", VALID_TOKEN)
-                .formParam("action", "ACTION")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("  Status: " + actionResponse.getStatusCode() + ", Response: " + actionResponse.getBody().asString());
-        assertThat(actionResponse.getStatusCode()).isEqualTo(200);
-        System.out.println("Шаг 3: LOGOUT");
-        Response logoutResponse = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", VALID_TOKEN)
-                .formParam("action", "LOGOUT")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("  Status: " + logoutResponse.getStatusCode() + ", Response: " + logoutResponse.getBody().asString());
-        assertThat(logoutResponse.getStatusCode()).isEqualTo(200);
+        String token = VALID_TOKEN;
+        
+        Allure.parameter("Token", token);
+        Allure.parameter("API Key", VALID_API_KEY);
+        
+        Response loginResponse = performLogin(token);
+        verifySuccessResponse(loginResponse);
+        
+        Response actionResponse = performAction(token);
+        verifySuccessResponse(actionResponse);
+        
+        Response logoutResponse = performLogout(token);
+        verifySuccessResponse(logoutResponse);
     }
 
     @Test
     @Order(5)
     @DisplayName("5. Невалидный формат токена (содержит G)")
+    @Description("Проверка обработки токена с недопустимыми символами (вне диапазона 0-9A-F)")
+    @Story("Негативные сценарии")
+    @Severity(SeverityLevel.NORMAL)
     void testInvalidTokenFormat() {
-        System.out.println("\n=== Тест 5: Невалидный формат токена ===");
-        wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
-                .withRequestBody(containing("ABCDEFG"))
-                .willReturn(aResponse()
-                        .withStatus(400)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\"result\": \"ERROR\", \"message\": \"Токен должно соответствовать формату\"}")));
-        Response response = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", "ABCDEFG123456789ABCDEF0123456789")
-                .formParam("action", "LOGIN")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isEqualTo(400);
-        assertThat(response.jsonPath().getString("result")).isEqualTo("ERROR");
-        assertThat(response.jsonPath().getString("message")).contains("должно соответствовать");
+        String invalidToken = "ABCDEFG123456789ABCDEF0123456789";
+        String action = "LOGIN";
+        
+        Allure.parameter("Token (невалидный)", invalidToken);
+        Allure.parameter("Action", action);
+        Allure.parameter("Причина невалидности", "Содержит символ 'G' (допустимы только 0-9A-F)");
+        
+        setupMockForInvalidToken(invalidToken);
+        
+        Response response = sendRequest(invalidToken, action);
+        
+        verifyErrorResponse(response, 400, "должно соответствовать");
     }
 
     @Test
     @Order(6)
     @DisplayName("6. Отсутствие API ключа")
+    @Description("Проверка обработки запроса без обязательного заголовка X-Api-Key")
+    @Story("Негативные сценарии")
+    @Severity(SeverityLevel.CRITICAL)
     void testMissingApiKey() {
-        System.out.println("\n=== Тест 6: Отсутствие API ключа ===");
-        wireMockServer.stubFor(post(urlEqualTo("/endpoint-no-key"))
-                .willReturn(aResponse()
-                        .withStatus(401)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\"result\": \"ERROR\", \"message\": \"Missing API Key\"}")));
-        Response response = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                // Не передаем X-Api-Key
-                .formParam("token", VALID_TOKEN)
-                .formParam("action", "LOGIN")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint-no-key");
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isEqualTo(401);
-        assertThat(response.jsonPath().getString("result")).isEqualTo("ERROR");
-        assertThat(response.jsonPath().getString("message")).contains("API Key");
+        String token = VALID_TOKEN;
+        String action = "LOGIN";
+        
+        Allure.parameter("Token", token);
+        Allure.parameter("Action", action);
+        Allure.parameter("API Key", "НЕ ПЕРЕДАН");
+        
+        setupMockForMissingApiKey();
+        
+        Response response = sendRequestWithoutApiKey(token, action);
+        
+        verifyErrorResponse(response, 401, "API Key");
     }
 
     @Test
     @Order(7)
     @DisplayName("7. Невалидное действие")
+    @Description("Проверка обработки неподдерживаемого значения параметра action")
+    @Story("Негативные сценарии")
+    @Severity(SeverityLevel.NORMAL)
     void testInvalidAction() {
-        System.out.println("\n=== Тест 7: Невалидное действие ===");
+        String token = VALID_TOKEN;
+        String invalidAction = "INVALID";
+        
+        Allure.parameter("Token", token);
+        Allure.parameter("Action (невалидный)", invalidAction);
+        Allure.parameter("Допустимые значения", "LOGIN, ACTION, LOGOUT");
+        
+        setupMockForInvalidAction();
+        
+        Response response = sendRequest(token, invalidAction);
+        
+        verifyErrorResponse(response, 400, "invalid action");
+    }
+
+    @Test
+    @Order(8)
+    @DisplayName("8. Отсутствие параметра token")
+    @Description("Проверка обработки запроса без обязательного параметра token")
+    @Story("Негативные сценарии")
+    @Severity(SeverityLevel.CRITICAL)
+    void testMissingToken() {
+        String action = "LOGIN";
+        
+        Allure.parameter("Token", "НЕ ПЕРЕДАН");
+        Allure.parameter("Action", action);
+        
+        setupMockForMissingToken();
+        
+        Response response = sendRequestWithoutToken(action);
+        
+        verifyErrorResponse(response, 400, "token");
+    }
+
+    @Test
+    @Order(9)
+    @DisplayName("9. Отсутствие параметра action")
+    @Description("Проверка обработки запроса без обязательного параметра action")
+    @Story("Негативные сценарии")
+    @Severity(SeverityLevel.CRITICAL)
+    void testMissingAction() {
+        String token = VALID_TOKEN;
+        
+        Allure.parameter("Token", token);
+        Allure.parameter("Action", "НЕ ПЕРЕДАН");
+        
+        setupMockForMissingAction();
+        
+        Response response = sendRequestWithoutAction(token);
+        
+        verifyErrorResponse(response, 400, "action");
+    }
+
+    @Test
+    @Order(10)
+    @DisplayName("10. Mock-сервер возвращает ошибку 500")
+    @Description("Проверка обработки внутренней ошибки сервера")
+    @Story("Негативные сценарии")
+    @Severity(SeverityLevel.NORMAL)
+    void testMockServerError() {
+        String token = VALID_TOKEN;
+        String action = "LOGIN";
+        
+        Allure.parameter("Token", token);
+        Allure.parameter("Action", action);
+        Allure.parameter("Ожидаемый статус", "500 Internal Server Error");
+        
+        setupMockForServerError();
+        
+        Response response = sendRequest(token, action);
+        
+        verifyStatusCode(response, 500);
+    }
+    
+    // ========== Вспомогательные методы с аннотацией @Step ==========
+    
+    @Step("Отправка POST запроса: token={token}, action={action}")
+    private Response sendRequest(String token, String action) {
+        return given()
+                .filter(new AllureRestAssured())
+                .contentType("application/x-www-form-urlencoded")
+                .header("Accept", "application/json")
+                .header("X-Api-Key", VALID_API_KEY)
+                .formParam("token", token)
+                .formParam("action", action)
+                .when()
+                .post(WEB_SERVICE_URL + "/endpoint");
+    }
+    
+    @Step("Отправка POST запроса БЕЗ API ключа: token={token}, action={action}")
+    private Response sendRequestWithoutApiKey(String token, String action) {
+        return given()
+                .filter(new AllureRestAssured())
+                .contentType("application/x-www-form-urlencoded")
+                .header("Accept", "application/json")
+                .formParam("token", token)
+                .formParam("action", action)
+                .when()
+                .post(WEB_SERVICE_URL + "/endpoint-no-key");
+    }
+    
+    @Step("Отправка POST запроса БЕЗ параметра token: action={action}")
+    private Response sendRequestWithoutToken(String action) {
+        return given()
+                .filter(new AllureRestAssured())
+                .contentType("application/x-www-form-urlencoded")
+                .header("Accept", "application/json")
+                .header("X-Api-Key", VALID_API_KEY)
+                .formParam("action", action)
+                .when()
+                .post(WEB_SERVICE_URL + "/endpoint");
+    }
+    
+    @Step("Отправка POST запроса БЕЗ параметра action: token={token}")
+    private Response sendRequestWithoutAction(String token) {
+        return given()
+                .filter(new AllureRestAssured())
+                .contentType("application/x-www-form-urlencoded")
+                .header("Accept", "application/json")
+                .header("X-Api-Key", VALID_API_KEY)
+                .formParam("token", token)
+                .when()
+                .post(WEB_SERVICE_URL + "/endpoint");
+    }
+    
+    @Step("Шаг 1: Выполнение LOGIN для token={token}")
+    private Response performLogin(String token) {
+        return sendRequest(token, "LOGIN");
+    }
+    
+    @Step("Шаг 2: Выполнение ACTION для token={token}")
+    private Response performAction(String token) {
+        return sendRequest(token, "ACTION");
+    }
+    
+    @Step("Шаг 3: Выполнение LOGOUT для token={token}")
+    private Response performLogout(String token) {
+        return sendRequest(token, "LOGOUT");
+    }
+    
+    @Step("Проверка успешного ответа: статус 200, result=OK")
+    private void verifySuccessResponse(Response response) {
+        Allure.step("Проверка статус-кода 200", () -> {
+            assertThat(response.getStatusCode()).isEqualTo(200);
+        });
+        
+        Allure.step("Проверка поля result=OK", () -> {
+            assertThat(response.jsonPath().getString("result")).isEqualTo("OK");
+        });
+        
+        Allure.attachment("Response Body", response.getBody().asString());
+    }
+    
+    @Step("Проверка ответа с ошибкой: статус {expectedStatus}, сообщение содержит '{messageFragment}'")
+    private void verifyErrorResponse(Response response, int expectedStatus, String messageFragment) {
+        Allure.step("Проверка статус-кода " + expectedStatus, () -> {
+            assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
+        });
+        
+        Allure.step("Проверка поля result=ERROR", () -> {
+            assertThat(response.jsonPath().getString("result")).isEqualTo("ERROR");
+        });
+        
+        Allure.step("Проверка сообщения об ошибке содержит: " + messageFragment, () -> {
+            assertThat(response.jsonPath().getString("message")).contains(messageFragment);
+        });
+        
+        Allure.attachment("Response Body", response.getBody().asString());
+    }
+    
+    @Step("Проверка статус-кода {expectedStatus}")
+    private void verifyStatusCode(Response response, int expectedStatus) {
+        assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
+        Allure.attachment("Response Body", response.getBody().asString());
+    }
+    
+    @Step("Настройка mock для невалидного токена")
+    private void setupMockForInvalidToken(String invalidToken) {
+        wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
+                .withRequestBody(containing(invalidToken.substring(0, 7)))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"result\": \"ERROR\", \"message\": \"Токен должно соответствовать формату\"}")));
+    }
+    
+    @Step("Настройка mock для отсутствующего API ключа")
+    private void setupMockForMissingApiKey() {
+        wireMockServer.stubFor(post(urlEqualTo("/endpoint-no-key"))
+                .willReturn(aResponse()
+                        .withStatus(401)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"result\": \"ERROR\", \"message\": \"Missing API Key\"}")));
+    }
+    
+    @Step("Настройка mock для невалидного действия")
+    private void setupMockForInvalidAction() {
         wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
                 .withRequestBody(containing("action=INVALID"))
                 .willReturn(aResponse()
                         .withStatus(400)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"result\": \"ERROR\", \"message\": \"invalid action\"}")));
-        Response response = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", VALID_TOKEN)
-                .formParam("action", "INVALID")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isEqualTo(400);
-        assertThat(response.jsonPath().getString("result")).isEqualTo("ERROR");
-        assertThat(response.jsonPath().getString("message")).contains("invalid action");
     }
-
-    @Test
-    @Order(8)
-    @DisplayName("8. Отсутствие параметра token")
-    void testMissingToken() {
-        System.out.println("\n=== Тест 8: Отсутствие параметра token ===");
+    
+    @Step("Настройка mock для отсутствующего параметра token")
+    private void setupMockForMissingToken() {
         wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
                 .withRequestBody(notMatching(".*token=.*"))
                 .willReturn(aResponse()
                         .withStatus(400)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"result\": \"ERROR\", \"message\": \"Missing token parameter\"}")));
-        Response response = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("action", "LOGIN")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isEqualTo(400);
-        assertThat(response.jsonPath().getString("result")).isEqualTo("ERROR");
-        assertThat(response.jsonPath().getString("message")).contains("token");
     }
-
-    @Test
-    @Order(9)
-    @DisplayName("9. Отсутствие параметра action")
-    void testMissingAction() {
-        System.out.println("\n=== Тест 9: Отсутствие параметра action ===");
+    
+    @Step("Настройка mock для отсутствующего параметра action")
+    private void setupMockForMissingAction() {
         wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
                 .withRequestBody(notMatching(".*action=.*"))
                 .willReturn(aResponse()
                         .withStatus(400)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"result\": \"ERROR\", \"message\": \"Missing action parameter\"}")));
-        Response response = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", VALID_TOKEN)
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isEqualTo(400);
-        assertThat(response.jsonPath().getString("result")).isEqualTo("ERROR");
-        assertThat(response.jsonPath().getString("message")).contains("action");
     }
-
-    @Test
-    @Order(10)
-    @DisplayName("10. Mock-сервер возвращает ошибку 500")
-    void testMockServerError() {
-        System.out.println("\n=== Тест 10: Mock-сервер возвращает ошибку 500 ===");
+    
+    @Step("Настройка mock для ошибки сервера 500")
+    private void setupMockForServerError() {
         wireMockServer.resetAll();
         wireMockServer.stubFor(post(urlEqualTo("/endpoint"))
                 .willReturn(aResponse()
                         .withStatus(500)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"error\": \"Internal server error\"}")));
-        Response response = given()
-                .contentType("application/x-www-form-urlencoded")
-                .header("Accept", "application/json")
-                .header("X-Api-Key", VALID_API_KEY)
-                .formParam("token", VALID_TOKEN)
-                .formParam("action", "LOGIN")
-                .when()
-                .post(WEB_SERVICE_URL + "/endpoint");
-        System.out.println("Status: " + response.getStatusCode());
-        System.out.println("Response: " + response.getBody().asString());
-        assertThat(response.getStatusCode()).isEqualTo(500);
     }
 }
